@@ -26,7 +26,7 @@
 #define _DIST_TARGET    175 // Center of the rail (unit:mm)
 
 // PID parameters
-#define _KP  4    // proportional gain
+#define _KP   3.5   // proportional gain
 //#define _KD 0.0   // derivative gain
 //#define _KI 0.0   // integral gain
 
@@ -96,10 +96,10 @@ void loop()
     // Update PID variables
     error_current = dist_ema - _DIST_TARGET;
     if(error_current < 0){
-      pterm = _KP * error_current;
+      pterm = 1.08 * _KP * error_current;
     }
     if(error_current > 0){
-      pterm = 1.4 * _KP * error_current;
+      pterm = 1.36 * _KP * error_current;
     }
     
     control = pterm /* + dterm + iterm */;
