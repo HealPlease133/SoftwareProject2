@@ -11,7 +11,7 @@
 #define _INTERVAL_SERIAL  30 // serial interval (unit: ms)
 
 // EMA filter configuration for the IR distance sensor
-#define _EMA_ALPHA 0.7    // EMA weight of new sample (range: 0 to 1)
+#define _EMA_ALPHA 0.9    // EMA weight of new sample (range: 0 to 1)
                           // Setting EMA to 1 effectively disables EMA filter.
 
 // Servo adjustment - Set _DUTY_MAX, _NEU, _MIN with your own numbers
@@ -27,7 +27,7 @@
 
 // PID parameters
 //#define _KP  0.0   // proportional gain
-#define _KD 85      // derivative gain
+#define _KD 14.5      // derivative gain
 //#define _KI 0.0    // integral gain
 
 // global variables
@@ -96,12 +96,7 @@ void loop()
     // Update PID variables
     error_current = dist_ema - _DIST_TARGET;
     // pterm here
-    if(error_current < 0){
-      dterm = 1.24 * _KD * (error_current - error_prev);
-    }
-    if(error_current > 0){
-      dterm = 1.29 * _KD * (error_current - error_prev);
-    }
+    dterm = _KD * (error_current - error_prev);
     // iterm here
     
     control = /* pterm + */ dterm /* + iterm */;
