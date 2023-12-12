@@ -11,23 +11,23 @@
 #define _INTERVAL_SERIAL  80  // serial interval (unit: ms)
 
 // EMA filter configuration for the IR distance sensor
-#define _EMA_ALPHA 0.9    // EMA weight of new sample (range: 0 to 1)
+#define _EMA_ALPHA 0.7    // EMA weight of new sample (range: 0 to 1)
                           // Setting EMA to 1 effectively disables EMA filter
 
 // Servo adjustment - Set _DUTY_MAX, _NEU, _MIN with your own numbers
-#define _DUTY_MAX 2089 // 2000
-#define _DUTY_NEU 1655 // 1500
+#define _DUTY_MAX 2200 // 2000
+#define _DUTY_NEU 1680 // 1500
 #define _DUTY_MIN 1350 // 1000
 
-#define _SERVO_ANGLE_DIFF  75  // Replace with |D - E| degree
-#define _SERVO_SPEED       800  // servo speed 
+#define _SERVO_ANGLE_DIFF  45 // Replace with |D - E| degree
+#define _SERVO_SPEED       100  // servo speed 
 
 // Target Distance
 #define _DIST_TARGET    175 // Center of the rail (unit:mm)
 
 // PID parameters
-#define _KP 3.07  // proportional gain
-#define _KD 4.5  // derivative gain
+#define _KP 3.2  // proportional gain
+#define _KD 100  // derivative gain
 //#define _KI 0.0   // integral gain
 
 // global variables
@@ -98,20 +98,18 @@ void loop() {
 
    // PID control logic
     error_current = dist_ema - _DIST_TARGET;
+    float a = _DIST_TARGET - dist_ema;
+    
+    pterm = 1 * _KP * error_current;
     if(error_current < 0){
-      pterm = 1 * _KP * error_current;
+      dterm = -1.6 * _KD * (a - error_prev);
     }
-    if(error_current > 0){
-      pterm = 1.06 * _KP * error_current;
+    else{
+      dterm = -1 * _KD * (a - error_prev);
     }
-    if(error_current > 0){
-      dterm = 1.1 * _KD * (error_current - error_prev);
-    }
-    if(error_current < 0){
-      dterm = 1.04 * _KD * (error_current - error_prev);
-    }
+
     control = pterm + dterm /* + iterm*/;
-    error_prev = error_current;
+    error_prev = a;
 
     duty_target = _DUTY_NEU + control;
 
