@@ -7,6 +7,8 @@
 
 // Event interval parameters
 #define _INTERVAL_DIST    25    // distance sensor interval (unit: ms)
+#define _ITERM_MAX 60
+#define _ITERM_MIN -80
 //////////////// DO NOT modify below section!! //////////////////////////    
 #define _INTERVAL_SERVO   20     // servo interval (unit: ms)
 #define _INTERVAL_SERIAL  100    // serial interval (unit: ms)
@@ -18,18 +20,17 @@
                           // Setting EMA to 1 effectively disables EMA filter
 
 // Servo adjustment - Set _DUTY_MAX, _NEU, _MIN with your own numbers
-#define _DUTY_MAX 2200 // 2000
-#define _DUTY_NEU 1680 // 1500
-#define _DUTY_MIN 1350 // 1000
-#define _ITERM_MAX 300
+#define _DUTY_MAX 2133 // 2000
+#define _DUTY_NEU 1400 // 1450
+#define _DUTY_MIN 850 // 1000
 
-#define _SERVO_ANGLE_DIFF  45  // Replace with |D - E| degree
-#define _SERVO_SPEED       800  // servo speed 
-
+#define _SERVO_ANGLE_DIFF  60  // Replace with |D - E| degree
+#define _SERVO_SPEED       100  // servo speed 
+  
 // PID parameters
-#define _KP 3   // proportional gain
-#define _KD 0   // derivative gain
-#define _KI 0   // integral gain
+#define _KP 4.2     // proportional gain
+#define _KD 230   // derivative gain
+#define _KI 5   // integral gain
 
 // global variables
 
@@ -120,7 +121,9 @@ void loop() {
     dist_ema = _EMA_ALPHA * dist_filtered + (1.0 - _EMA_ALPHA) * dist_ema;
 
     // PID control logic
-    
+    error_current = dist_ema - dist_target;
+    float error_current_ = dist_target - dist_ema;
+
 //////////////// DO NOT modify below section!! /////////////////////////
     if (time_current >= last_sampling_time_move + _TIME_TO_STABILIZE) {
       error_cnt++;
@@ -134,21 +137,30 @@ void loop() {
       digitalWrite(PIN_LED, 1);
     }
 ////////////////////////////////////////////////////////////////////////
-    
-    error_current = dist_ema - dist_target;
-    float error_current_D = dist_target - dist_ema;    
-    pterm = _KP * error_current;
-    dterm = _KD * (error_current_D - error_prev);
+
+    if(error_current < 0){
+      pterm = _KP * error_current;
+    }
+    if(error_current > 0){
+      pterm = 1 * _KP * error_current;
+      }
+    if(error_current < 0){
+      dterm = 1  * _KD * (-error_current_ - error_prev);
+    }
+    if(error_current > 0){
+      dterm = 1 * _KD * (-error_current_ - error_prev);
+      }
     iterm += _KI * error_current;
-    if (abs(iterm) > _ITERM_MAX){
+    
+    if(abs(iterm) > _ITERM_MAX){
       iterm = 0;
-    }
-    if(iterm < -_ITERM_MAX ){
-      iterm = -_ITERM_MAX;
-    }
-    if(iterm > _ITERM_MAX){
+      }
+     if(iterm > _ITERM_MAX){
       iterm = _ITERM_MAX;
-    }
+     }
+     if(iterm < -_ITERM_MIN){
+      iterm = -_ITERM_MIN;
+     }
 
     control = pterm + dterm + iterm;
     error_prev = error_current;
@@ -189,7 +201,7 @@ void loop() {
       Serial.print(",ERR_ave(10X):");        Serial.println(error_sum / (float) error_cnt * 10);
     }
 
-    if (1) { // use for debugging with serial monitor
+    if (0) { // use for debugging with serial monitor
       Serial.print("MIN:0,MAX:310,TARGET:"); Serial.print(dist_target);
       Serial.print(",DIST:");    Serial.print(dist_ema);
       Serial.print(",pterm:");   Serial.print(pterm);
@@ -202,7 +214,7 @@ void loop() {
       Serial.print(",ERR_ave:"); Serial.println(error_sum / (float) error_cnt);
     }
 
-    if (0) { // use for evaluation
+    if (1) { // use for evaluation
       Serial.print("ERR_cnt:");
       Serial.print(error_cnt);
       Serial.print(",ERR_current:");
@@ -219,7 +231,7 @@ float volt_to_distance(int a_value)
 {
   // Replace next line into your own equation
   // return (6762.0 / (a_value - 9) - 4.0) * 10.0; 
-  return 733 + (-2.89 * a_value) + (4.01 * pow(a_value,2) * pow(10,-3)) + (-2.02 * pow(10,-6) * pow(a_value,3));
+  return 699 + (-2.81 * a_value) + (4.08 * pow(a_value,2) * pow(10,-3)) + (-2.19 * pow(10,-6) * pow(a_value,3));
 }
 
 int compare(const void *a, const void *b) {
